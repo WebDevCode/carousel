@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RIDI Carousel</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/react@18.1.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18.1.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.12.4/babel.js"></script>
+    <script type="module">
+      import Moduletest from "./test.js";
+      console.dir(Moduletest.slider);
+    </script>
+  </head>
+  <body>
+    <main id="root"></main>
+    <script type="text/babel">
+      const imageURL = [
+        {
+          id: "image1",
+          url: "https://active.ridibooks.com/ridibooks_banner/1681088135158_MjMwMzI5.jpg",
+        },
+        {
+          id: "image2",
+          url: "https://active.ridibooks.com/ridibooks_banner/1681347281621_MjIxMjE5.jpg",
+        },
+        {
+          id: "image3",
+          url: "https://active.ridibooks.com/ridibooks_banner/1680756732012_MjMwMzI5.jpg",
+        },
+        {
+          id: "image4",
+          url: "https://active.ridibooks.com/ridibooks_banner/1680658643620_MjMwMzI0.jpg",
+        },
+        {
+          id: "image5",
+          url: "https://active.ridibooks.com/ridibooks_banner/1680571792429_MjMwMzI0.jpg",
+        },
+        {
+          id: "image6",
+          url: "https://active.ridibooks.com/ridibooks_banner/1679899342230_MjMwMzI1.jpg",
+        },
+      ];
+
+      function prepareImageList(imageList) {
+        console.log("calling prepareimagelist");
+        const slidesCopy = [...imageList];
+        slidesCopy.push(...slidesCopy.slice(0, 3));
+        return slidesCopy;
+      }
+
+      const SliderItem = React.forwardRef(function SliderItem(props, ref) {
+        const { image, flexGrow = 0, flexBasis = 0, tabIndex = -1 } = props;
+        return (
+          <a
+            className="item-wrapper"
+            tabIndex={tabIndex}
+            href="#"
+            style={{ flexGrow, flexBasis }}
+            ref={ref}
+          >
+            <div className="item">
+              <div
+                className="item-image"
+                style={{ backgroundImage: `url(${image})` }}
+              ></div>
+            </div>
+          </a>
+        );
+      });
+
+      function Slider({ prevClickHandler, nextClickHandler, children }) {
+        return (
+          <React.Fragment>
+            <section className="slider-container">
+              <div className="slider-wrapper">
+                <div className="slider">{children}</div>
+              </div>
+            </section>
+            <div className="button-container">
+              <button id="prev" onClick={prevClickHandler}>
+                Prev
+              </button>
+              <button id="next" onClick={nextClickHandler}>
+                Next
+              </button>
+            </div>
+          </React.Fragment>
+        );
+      }
+
+      function App({ children }) {
+        const [imageList, setImageList] = React.useState(() =>
+          prepareImageList(imageURL)
+        );
+        const [currentImage, setCurrentImage] = React.useState(0);
+        const sliderRef = React.useRef(null);
+
+        function nextHandler() {
+          console.log(currentImage % imageURL.length);
+          setCurrentImage(currentImage + 1);
+        }
+        function prevHandler() {}
+
+        React.useEffect(() => {
+          let resetTimeout;
+          if (currentImage === imageURL.length) {
+            resetTimeout = setTimeout(() => {
+              setCurrentImage(0);
+            }, 300);
+          }
+          return () => {
+            clearTimeout(resetTimeout);
+          };
+        }, [currentImage]);
+
+        return (
+          <React.Fragment>
+            <Slider
+              nextClickHandler={nextHandler}
+              prevClickHandler={prevHandler}
+            >
+              {imageList.map((image, index) => {
+                return (
+                  <SliderItem
+                    key={index}
+                    image={image.url}
+                    flexGrow={index === currentImage ? 1 : 0}
+                    flexBasis={
+                      index === currentImage + 1 || index === currentImage + 2
+                        ? "46px"
+                        : 0
+                    }
+                    tabIndex={0}
+                    ref={index === currentImage ? sliderRef : null}
+                  />
+                );
+              })}
+            </Slider>
+          </React.Fragment>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
