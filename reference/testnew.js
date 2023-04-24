@@ -1,20 +1,21 @@
-export default {
+import React from "react";
+const test = {
   slider: function (e, t, n) {
-    n.r(t),
-      n.d(t, {
-        TopCarouselCover: function () {
-          return re;
-        },
-        TopCarouselCoverInner: function () {
-          return ne;
-        },
-        TopCarouselCoverSkeleton: function () {
-          return ie.e;
-        },
-        tests__TopCarouselCover: function () {
-          return te;
-        },
-      });
+    n.r(t);
+    n.d(t, {
+      TopCarouselCover: function () {
+        return re;
+      },
+      TopCarouselCoverInner: function () {
+        return ne;
+      },
+      TopCarouselCoverSkeleton: function () {
+        return ie.e;
+      },
+      tests__TopCarouselCover: function () {
+        return te;
+      },
+    });
     var r = n(31737),
       i = n(32735),
       a = n(98928),
@@ -549,3 +550,5 @@ export default {
       ie = n(16945);
   },
 };
+
+export default test;

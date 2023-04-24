@@ -1,45 +1,95 @@
-import imgList from "./imagelist";
+import imageList from "./imagelist";
 import "./App.css";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { tweenValue } from "./utils";
 
 function prepareImageList(imageList) {
   return [...imageList, ...imageList.slice(0, 3)];
 }
 
+const images = prepareImageList(imageList);
+
 function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [imageList, setImageList] = useState(prepareImageList(imgList));
   const itemRef = useRef(null);
+  const prevItemRef = useRef(null);
+  const enableClick = useRef(true);
 
   function prevClickHandler() {
     setCurrentIndex(currentIndex - 1);
   }
 
   function nextClickHandler() {
-    setCurrentIndex(currentIndex + 1);
-  }
-
-  React.useEffect(() => {
-    if (currentIndex === imgList.length) {
-      setCurrentIndex(0);
-      setImageList(prepareImageList(imgList));
+    if (enableClick) {
+      setCurrentIndex(currentIndex + 1);
+      console.log("from click", currentIndex);
     }
-  }, [currentIndex]);
+  }
+  useEffect(() => {
+    enableClick.current = false;
+    if (currentIndex > 0) {
+      tweenValue(
+        0,
+        1,
+        400,
+        (value) => {
+          itemRef.current.style.flexGrow = value;
+        },
+        () => {
+          enableClick.current = true;
+        }
+      );
+      tweenValue(
+        1,
+        0,
+        400,
+        (value) => {
+          prevItemRef.current.style.flexGrow = value;
+        },
+        () => {
+          enableClick.current = true;
+        }
+      );
+    }
+    if (currentIndex === imageList.length) {
+      console.log("we are back at the beginning");
+      tweenValue(
+        0,
+        1,
+        400,
+        (value) => {
+          itemRef.current.style.flexGrow = value;
+        },
+        () => {
+          itemRef.current = imageList[0];
+          setCurrentIndex(0);
+          enableClick.current = true;
+        }
+      );
+    }
+  });
 
   return (
     <section>
+      <p>{currentIndex}</p>
       <div className="carousel-wrapper">
         <div className="carousel">
-          {imageList.map((item, index) => (
+          {images.map((item, index) => (
             <div
               className="carousel-item"
               key={index}
-              ref={currentIndex ? itemRef : null}
+              ref={
+                index === currentIndex
+                  ? itemRef
+                  : index === currentIndex - 1
+                  ? prevItemRef
+                  : null
+              }
               style={{
                 backgroundImage: `url(${item.url})`,
                 flexGrow: `${index === currentIndex ? 1 : 0}`,
                 flexBasis: `${
-                  index === currentIndex + 1 || index === currentIndex + 2
+                  index === currentIndex + 2 || index === currentIndex + 3
                     ? "46px"
                     : 0
                 }`,

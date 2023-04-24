@@ -17,14 +17,15 @@ section {
   align-items: stretch;
   height: 100%;
   overflow: hidden;
-  scroll-snap-type: x mandatory;
   gap: 5px;
 }
 .carousel-item {
   height: 400px;
   width: 0;
   border-radius: 6px;
-  transition: all 0.3s linear;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
 }
 .carousel-item-inner {
   width: 1020px;
