@@ -183,6 +183,7 @@ const self = [].push([
       }
       var v = n(77303);
       //y = n(77514), debounce and throttle
+      //replace with throttle-debounce npm package.
       function debounce(func, waitTime, immediate = false) {
         let timeoutId = null;
 

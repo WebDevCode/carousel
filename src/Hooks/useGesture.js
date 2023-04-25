@@ -246,7 +246,7 @@ function i(e) {
   return { swipeRef: n, setSwipeStateRef: f };
 }
 
-function s(e, { duration, easing, space }) {
+function s(easingFn, { duration, easing, space }) {
   const currentPosition = React.useRef(0);
   const positionDifference = React.useRef(0);
   const startPosition = React.useRef(0);
@@ -255,7 +255,7 @@ function s(e, { duration, easing, space }) {
   const l = React.useRef(duration);
   const f = React.useRef(easing);
   const v = React.useRef(null);
-  const h = React.useRef(e);
+  const easingFnRef = React.useRef(easingFn);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const p =
     null !== space && undefined !== space
@@ -293,7 +293,7 @@ function s(e, { duration, easing, space }) {
   const y = React.useCallback(
       function () {
         const e = animationCallback();
-        h.current(currentPosition.current, d.current);
+        easingFnRef.current(currentPosition.current, d.current);
         v.current = e ? requestAnimationFrame(y) : null;
       },
       [animationCallback]
@@ -341,17 +341,15 @@ export function useGesture({ updateItem, updateIsSwiping }, n, t) {
   const x = React.useRef((e, n) => {});
 
   const S = React.useCallback(
-    (e, obj) => {
-      u.current = e;
+    (easingFn, obj) => {
+      u.current = easingFn;
       updateItem(u.current, obj);
     },
     [updateItem]
   );
   const P = React.useMemo(
       function () {
-        var e,
-          n,
-          r = null !== t.space && undefined !== t.space ? t.space : y;
+        var r = null !== t.space && undefined !== t.space ? t.space : y;
         return {
           ...r,
           snap: null !== r.snap && undefined !== r.snap ? r.snap : h(r),
