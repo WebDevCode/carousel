@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useRef } from "react";
 import { useItemRefs } from "../Hooks/useItemRefs";
 import { useTweenAnimation } from "../Hooks/useTweenAnimation";
@@ -58,4 +59,6 @@ export const Carousel = React.memo(({ itemsFilled, length }) => {
     },
     [itemsLength]
   );
+
+  const maxSwipe = React.useRef(1);
 });
