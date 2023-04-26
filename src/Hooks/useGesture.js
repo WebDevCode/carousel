@@ -106,109 +106,114 @@ function i({ updateState, updateIsSwiping }) {
   const onScrollEventHandler = useWheelState(memoizedUpdateRefs);
 
   function useTouchState({ updateState, updateIsSwiping }) {
-    var n = React.useRef(null),
-      t = React.useRef(false),
-      i = React.useRef(false),
-      o = React.useRef({ x: 0, y: 0 }),
-      a = React.useRef({ x: 0, y: 0 }),
-      s = React.useCallback(
-        function (t) {
-          var r =
-            arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
-          n.current = null;
-          i.current = false;
-          updateState.current({
-            offset: t,
-            isFirst: false,
-            isFinal: true,
-            isCanceled: r,
-            type: "touch",
-          });
-          updateIsSwiping.current(!1);
-        },
-        [updateIsSwiping, updateState]
-      );
-    var l = React.useCallback(function (e) {
-      if ("mouse" !== e.pointerType) {
-        o.current.x = e.clientX;
-        o.current.y = e.clientY;
-        a.current.x = e.clientX;
-        a.current.y = e.clientY;
+    const n = React.useRef(null);
+    const t = React.useRef(false);
+    const i = React.useRef(false);
+    const o = React.useRef({ x: 0, y: 0 });
+    const a = React.useRef({ x: 0, y: 0 });
+    const setPointerState = React.useCallback(
+      function (offset) {
+        var isCanceled =
+          arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
+        n.current = null;
+        i.current = false;
+        updateState.current({
+          offset,
+          isFirst: false,
+          isFinal: true,
+          isCanceled,
+          type: "touch",
+        });
+        updateIsSwiping.current(false);
+      },
+      [updateIsSwiping, updateState]
+    );
+    const onPointerDown = React.useCallback(function (event) {
+      if ("mouse" !== event.pointerType) {
+        o.current.x = event.clientX;
+        o.current.y = event.clientY;
+        a.current.x = event.clientX;
+        a.current.y = event.clientY;
         n.current = false;
-        t.current = (e) =>
-          "pageX" in e &&
+        t.current = (event) =>
+          "pageX" in event &&
           (o.current.x > window.innerWidth - 30 || o.current.x < 30);
       }
     }, []);
-    var f = React.useCallback(
-      function (r) {
-        if ("mouse" !== r.pointerType)
+    const onPointerMove = React.useCallback(
+      function (event) {
+        if ("mouse" !== event.pointerType)
           if (!t.current) {
-            var s = !1,
-              l = Math.abs(r.clientX - o.current.x),
-              f = Math.abs(r.clientY - o.current.y);
-            if (
-              (!1 === n.current &&
-                l >= 20 &&
-                l > f &&
-                ((s = !0),
-                (n.current = !0),
-                updateIsSwiping.current(!0),
-                (o.current.x = r.clientX),
-                (o.current.y = r.clientY)),
-              n.current)
-            ) {
-              a.current.x = r.clientX;
-              a.current.y = r.clientY;
-              var p = o.current.x - r.clientX;
+            var isFirstEvent = false,
+              xOffset = Math.abs(event.clientX - o.current.x),
+              yOffset = Math.abs(event.clientY - o.current.y);
+            if (!n.current && xOffset >= 20 && xOffset > yOffset) {
+              isFirstEvent = true;
+              n.current = true;
+              updateIsSwiping.current(true);
+              o.current.x = event.clientX;
+              o.current.y = event.clientY;
+
+              a.current.x = event.clientX;
+              a.current.y = event.clientY;
+              const offset = o.current.x - event.clientX;
               updateState.current({
-                offset: p,
-                isFirst: s,
-                isCanceled: !1,
-                isFinal: !1,
+                offset,
+                isFirst: isFirstEvent,
+                isCanceled: false,
+                isFinal: false,
                 type: "touch",
               });
-              i.current = i.current || Math.atan2(f, l) < (30 / 180) * Math.PI;
+              i.current =
+                i.current ||
+                Math.atan2(yOffset, xOffset) < (30 / 180) * Math.PI;
             }
           }
       },
       [updateIsSwiping, updateState]
     );
-    var p = React.useCallback(
-      function (e) {
-        if ("mouse" !== e.pointerType && n.current) {
-          var t = o.current.x - e.clientX;
+    const onPointerUp = React.useCallback(
+      function (event) {
+        if ("mouse" !== event.pointerType && n.current) {
+          var t = o.current.x - event.clientX;
 
-          s(t);
+          setPointerState(t);
         }
       },
-      [s]
+      [setPointerState]
     );
-    var d = React.useCallback(
-      function (e) {
-        if ("mouse" !== e.pointerType && n.current) {
+    const onPointerCancel = React.useCallback(
+      function (event) {
+        if ("mouse" !== event.pointerType && n.current) {
           var t = o.current.x - a.current.x;
 
-          s(t, !0);
+          setPointerState(t, true);
         }
       },
-      [s]
+      [setPointerState]
     );
-    var v = React.useCallback(function (e) {
-      i.current && e.preventDefault();
+    const onTouchMove = React.useCallback(function (event) {
+      i.current && event.preventDefault();
     }, []);
     return React.useMemo(
       function () {
         return {
-          onPointerDown: l,
-          onPointerMove: f,
-          onPointerUp: p,
-          onPointerCancel: d,
-          onTouchMove: v,
-          setPointerState: s,
+          onPointerDown,
+          onPointerMove,
+          onPointerUp,
+          onPointerCancel,
+          onTouchMove,
+          setPointerState,
         };
       },
-      [l, f, p, d, v, s]
+      [
+        onPointerDown,
+        onPointerMove,
+        onPointerUp,
+        onPointerCancel,
+        onTouchMove,
+        setPointerState,
+      ]
     );
   }
   const onTouchEventHandler = useTouchState(memoizedUpdateRefs);
@@ -216,42 +221,53 @@ function i({ updateState, updateIsSwiping }) {
   React.useEffect(
     function () {
       if (elementRef.current) {
-        var e = elementRef.current.style.touchAction,
-          t = elementRef.current;
-        return (
-          (t.style.touchAction = "pan-y"),
-          t.addEventListener("wheel", onScrollEventHandler.onWheel, {
-            passive: false,
-          }),
-          t.addEventListener("touchmove", onTouchEventHandler.onTouchMove, {
-            passive: !1,
-          }),
-          t.addEventListener("pointerup", onTouchEventHandler.onPointerUp),
-          t.addEventListener("pointermove", onTouchEventHandler.onPointerMove),
-          t.addEventListener("pointerdown", onTouchEventHandler.onPointerDown),
-          t.addEventListener(
+        const touchAction = elementRef.current.style.touchAction;
+        const element = elementRef.current;
+
+        element.style.touchAction = "pan-y";
+        element.addEventListener("wheel", onScrollEventHandler.onWheel, {
+          passive: false,
+        });
+        element.addEventListener("touchmove", onTouchEventHandler.onTouchMove, {
+          passive: false,
+        });
+        element.addEventListener("pointerup", onTouchEventHandler.onPointerUp);
+        element.addEventListener(
+          "pointermove",
+          onTouchEventHandler.onPointerMove
+        );
+        element.addEventListener(
+          "pointerdown",
+          onTouchEventHandler.onPointerDown
+        );
+        element.addEventListener(
+          "pointercancel",
+          onTouchEventHandler.onPointerCancel
+        );
+        return () => {
+          element.style.touchAction = touchAction;
+          element.removeEventListener("wheel", onScrollEventHandler.onWheel);
+          element.removeEventListener(
+            "touchmove",
+            onTouchEventHandler.onTouchMove
+          );
+          element.removeEventListener(
+            "pointerup",
+            onTouchEventHandler.onPointerUp
+          );
+          element.removeEventListener(
+            "pointermove",
+            onTouchEventHandler.onPointerMove
+          );
+          element.removeEventListener(
+            "pointerdown",
+            onTouchEventHandler.onPointerDown
+          );
+          element.removeEventListener(
             "pointercancel",
             onTouchEventHandler.onPointerCancel
-          ),
-          function () {
-            t.style.touchAction = e;
-            t.removeEventListener("wheel", onScrollEventHandler.onWheel);
-            t.removeEventListener("touchmove", onTouchEventHandler.onTouchMove);
-            t.removeEventListener("pointerup", onTouchEventHandler.onPointerUp);
-            t.removeEventListener(
-              "pointermove",
-              onTouchEventHandler.onPointerMove
-            );
-            t.removeEventListener(
-              "pointerdown",
-              onTouchEventHandler.onPointerDown
-            );
-            t.removeEventListener(
-              "pointercancel",
-              onTouchEventHandler.onPointerCancel
-            );
-          }
-        );
+          );
+        };
       }
       return function () {};
     },
@@ -264,7 +280,7 @@ function i({ updateState, updateIsSwiping }) {
         updateIsSwipingRef.current = function () {};
         updateStateRef.current = function () {};
         onScrollEventHandler.setWheelState(e, true);
-        onTouchEventHandler.setPointerState(e, !0);
+        onTouchEventHandler.setPointerState(e, true);
         updateIsSwipingRef.current = r;
         updateStateRef.current = n;
       },
