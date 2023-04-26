@@ -17,85 +17,98 @@ const y = {
   snap: h(s.hw),
 };
 
-function i(e) {
-  var n = React.useRef(null),
-    t = React.useRef(e.updateState),
-    i = React.useRef(e.updateIsSwiping);
-  t.current = e.updateState;
-  i.current = e.updateIsSwiping;
-  var o = React.useMemo(function () {
-      return { updateState: t, updateIsSwiping: i };
-    }, []),
-    a = (function (e) {
-      var n = React.useRef(null),
-        t = React.useRef(0),
-        u = React.useRef(1),
-        c = React.useCallback(
-          function (r) {
-            var u =
-              arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
-            null !== n.current && clearTimeout(n.current);
-            e.updateState.current({
-              offset: r,
-              isFirst: !1,
-              isFinal: !0,
-              isCanceled: u,
+function i({ updateState, updateIsSwiping }) {
+  const elementRef = React.useRef(null);
+  const updateStateRef = React.useRef(updateState);
+  const updateIsSwipingRef = React.useRef(updateIsSwiping);
+  updateStateRef.current = updateState;
+  updateIsSwipingRef.current = updateIsSwiping;
+
+  const memoizedUpdateRefs = React.useMemo(() => {
+    return {
+      updateState: updateStateRef,
+      updateIsSwiping: updateIsSwipingRef,
+    };
+  }, []);
+
+  function useWheelState({ updateState, updateIsSwiping }) {
+    const scrollTimeoutRef = React.useRef(null);
+    const scrollStartRef = React.useRef(0);
+    const scrollDirectionRef = React.useRef(1);
+    const setScrollOffset = React.useCallback(
+      function (offset) {
+        var isCanceled =
+          arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        updateState.current({
+          offset,
+          isFirst: false,
+          isFinal: true,
+          isCanceled,
+          type: "wheel",
+        });
+        updateIsSwiping.current(false);
+        scrollTimeoutRef.current = null;
+        scrollStartRef.current = 0;
+      },
+      [updateIsSwiping, updateState]
+    );
+    return {
+      onWheel: React.useCallback(
+        function (event) {
+          //user scrolling vertically
+          if (!(Math.abs(event.deltaX) < Math.abs(event.deltaY))) {
+            event.preventDefault();
+            const distance =
+              (function getDistance(event) {
+                return typeof event.deltaMode === "number" &&
+                  event.deltaMode !== 0
+                  ? 500
+                  : 1;
+              })(event) * event.deltaX;
+            const direction = Math.sign(distance);
+            if (0 !== direction && direction !== scrollDirectionRef.current) {
+              if (null !== scrollTimeoutRef.current) {
+                setScrollOffset(scrollStartRef.current);
+                clearTimeout(scrollTimeoutRef.current);
+                scrollTimeoutRef.current = null;
+                scrollDirectionRef.current = direction;
+              }
+            }
+            let isFirstEvent = true;
+            if (null !== scrollTimeoutRef.current) {
+              clearTimeout(scrollTimeoutRef.current);
+              scrollTimeoutRef.current = null;
+              isFirstEvent = false;
+            }
+            var startOffset = scrollStartRef.current;
+            scrollTimeoutRef.current = setTimeout(function () {
+              setScrollOffset(startOffset);
+            }, 150);
+            scrollStartRef.current += distance;
+            updateIsSwiping.current(!0);
+            updateState.current({
+              offset: startOffset,
+              isFirst: isFirstEvent,
+              isFinal: !1,
+              isCanceled: !1,
               type: "wheel",
             });
-            e.updateIsSwiping.current(!1);
-            n.current = null;
-            t.current = 0;
-          },
-          [e]
-        );
-      return {
-        onWheel: React.useCallback(
-          function (r) {
-            if (!(Math.abs(r.deltaX) < Math.abs(r.deltaY))) {
-              r.preventDefault();
-              var i =
-                  (function (e) {
-                    return "number" === typeof e.deltaMode && 0 !== e.deltaMode
-                      ? 500
-                      : 1;
-                  })(r) * r.deltaX,
-                o = Math.sign(i);
-              if (0 !== o && o !== u.current && null !== n.current) {
-                c(t.current);
-                clearTimeout(n.current);
-                n.current = null;
-                u.current = o;
-              }
-              var a = !0;
-              if (null !== n.current) {
-                clearTimeout(n.current);
-                n.current = null;
-                a = !1;
-              }
-              var s = t.current;
-              n.current = setTimeout(function () {
-                c(s);
-              }, 150);
-              t.current += i;
-              e.updateIsSwiping.current(!0);
-              e.updateState.current({
-                offset: s,
-                isFirst: a,
-                isFinal: !1,
-                isCanceled: !1,
-                type: "wheel",
-              });
-            }
-          },
-          [e, c]
-        ),
-        setWheelState: c,
-      };
-    })(o);
-  var s = (function (e) {
+          }
+        },
+        [setScrollOffset, updateIsSwiping, updateState]
+      ),
+      setWheelState: setScrollOffset,
+    };
+  }
+  const onScrollEventHandler = useWheelState(memoizedUpdateRefs);
+
+  function useTouchState({ updateState, updateIsSwiping }) {
     var n = React.useRef(null),
-      t = React.useRef(!1),
-      i = React.useRef(!1),
+      t = React.useRef(false),
+      i = React.useRef(false),
       o = React.useRef({ x: 0, y: 0 }),
       a = React.useRef({ x: 0, y: 0 }),
       s = React.useCallback(
@@ -103,17 +116,17 @@ function i(e) {
           var r =
             arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
           n.current = null;
-          i.current = !1;
-          e.updateState.current({
+          i.current = false;
+          updateState.current({
             offset: t,
-            isFirst: !1,
-            isFinal: !0,
+            isFirst: false,
+            isFinal: true,
             isCanceled: r,
             type: "touch",
           });
-          e.updateIsSwiping.current(!1);
+          updateIsSwiping.current(!1);
         },
-        [e]
+        [updateIsSwiping, updateState]
       );
     var l = React.useCallback(function (e) {
       if ("mouse" !== e.pointerType) {
@@ -121,7 +134,7 @@ function i(e) {
         o.current.y = e.clientY;
         a.current.x = e.clientX;
         a.current.y = e.clientY;
-        n.current = !1;
+        n.current = false;
         t.current = (e) =>
           "pageX" in e &&
           (o.current.x > window.innerWidth - 30 || o.current.x < 30);
@@ -140,7 +153,7 @@ function i(e) {
                 l > f &&
                 ((s = !0),
                 (n.current = !0),
-                e.updateIsSwiping.current(!0),
+                updateIsSwiping.current(!0),
                 (o.current.x = r.clientX),
                 (o.current.y = r.clientY)),
               n.current)
@@ -148,7 +161,7 @@ function i(e) {
               a.current.x = r.clientX;
               a.current.y = r.clientY;
               var p = o.current.x - r.clientX;
-              e.updateState.current({
+              updateState.current({
                 offset: p,
                 isFirst: s,
                 isCanceled: !1,
@@ -159,7 +172,7 @@ function i(e) {
             }
           }
       },
-      [e]
+      [updateIsSwiping, updateState]
     );
     var p = React.useCallback(
       function (e) {
@@ -197,53 +210,69 @@ function i(e) {
       },
       [l, f, p, d, v, s]
     );
-  })(o);
+  }
+  const onTouchEventHandler = useTouchState(memoizedUpdateRefs);
+
   React.useEffect(
     function () {
-      if (n.current) {
-        var e = n.current.style.touchAction,
-          t = n.current;
+      if (elementRef.current) {
+        var e = elementRef.current.style.touchAction,
+          t = elementRef.current;
         return (
           (t.style.touchAction = "pan-y"),
-          t.addEventListener("wheel", a.onWheel, { passive: !1 }),
-          t.addEventListener("touchmove", s.onTouchMove, {
+          t.addEventListener("wheel", onScrollEventHandler.onWheel, {
+            passive: false,
+          }),
+          t.addEventListener("touchmove", onTouchEventHandler.onTouchMove, {
             passive: !1,
           }),
-          t.addEventListener("pointerup", s.onPointerUp),
-          t.addEventListener("pointermove", s.onPointerMove),
-          t.addEventListener("pointerdown", s.onPointerDown),
-          t.addEventListener("pointercancel", s.onPointerCancel),
+          t.addEventListener("pointerup", onTouchEventHandler.onPointerUp),
+          t.addEventListener("pointermove", onTouchEventHandler.onPointerMove),
+          t.addEventListener("pointerdown", onTouchEventHandler.onPointerDown),
+          t.addEventListener(
+            "pointercancel",
+            onTouchEventHandler.onPointerCancel
+          ),
           function () {
             t.style.touchAction = e;
-            t.removeEventListener("wheel", a.onWheel);
-            t.removeEventListener("touchmove", s.onTouchMove);
-            t.removeEventListener("pointerup", s.onPointerUp);
-            t.removeEventListener("pointermove", s.onPointerMove);
-            t.removeEventListener("pointerdown", s.onPointerDown);
-            t.removeEventListener("pointercancel", s.onPointerCancel);
+            t.removeEventListener("wheel", onScrollEventHandler.onWheel);
+            t.removeEventListener("touchmove", onTouchEventHandler.onTouchMove);
+            t.removeEventListener("pointerup", onTouchEventHandler.onPointerUp);
+            t.removeEventListener(
+              "pointermove",
+              onTouchEventHandler.onPointerMove
+            );
+            t.removeEventListener(
+              "pointerdown",
+              onTouchEventHandler.onPointerDown
+            );
+            t.removeEventListener(
+              "pointercancel",
+              onTouchEventHandler.onPointerCancel
+            );
           }
         );
       }
       return function () {};
     },
-    [a, s]
+    [onScrollEventHandler, onTouchEventHandler]
   );
   var l = React.useCallback(
       function (e) {
-        var n = t.current,
-          r = i.current;
-        i.current = function () {};
-        t.current = function () {};
-        a.setWheelState(e, !0);
-        s.setPointerState(e, !0);
-        i.current = r;
-        t.current = n;
+        var n = updateStateRef.current,
+          r = updateIsSwipingRef.current;
+        updateIsSwipingRef.current = function () {};
+        updateStateRef.current = function () {};
+        onScrollEventHandler.setWheelState(e, true);
+        onTouchEventHandler.setPointerState(e, !0);
+        updateIsSwipingRef.current = r;
+        updateStateRef.current = n;
       },
-      [a, s]
+      [onScrollEventHandler, onTouchEventHandler]
     ),
     f = React.useRef(l);
   f.current = l;
-  return { swipeRef: n, setSwipeStateRef: f };
+  return { swipeRef: elementRef, setSwipeStateRef: f };
 }
 
 function s(easingFn, { duration, easing, space }) {

@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+import React from "react";
+
 export function clamp(x, lower, upper) {
   return Math.min(upper, Math.max(lower, x));
 }
@@ -38,4 +41,140 @@ export function moduloFn(e) {
     // This ensures that the result is always between 0 and `e-1`
     return ((n % e) + e) % e;
   };
+}
+
+function animationLibrary(React, exports, module) {
+  const { useRef, useCallback, useEffect } = React;
+
+  function linearInterpolation(t) {
+    return t;
+  }
+
+  function diffAndNormalize(space) {
+    return {
+      diff: function (start, end) {
+        return space.normalize(end - start);
+      },
+      normalize: space.normalize,
+    };
+  }
+
+  function wrapAround(space) {
+    const midpoint = space.size / 2;
+
+    function normalize(n) {
+      return ((n % space.size) + space.size) % space.size;
+    }
+
+    function diff(start, end) {
+      let distance = normalize(end) - start;
+      if (distance > midpoint) {
+        distance -= space.size;
+      } else if (distance < -midpoint) {
+        distance += space.size;
+      }
+      return distance;
+    }
+
+    return {
+      normalize,
+      diff,
+    };
+  }
+
+  function useAnimation(callback, options) {
+    const position = useRef(options.initialPosition);
+    const velocity = useRef(0);
+    const lastTime = useRef(performance.now());
+    const duration = useRef(options.duration);
+    const easingFunction = useRef(options.easing || linearInterpolation);
+    const space = useRef(
+      options.space || diffAndNormalize({ normalize: linearInterpolation })
+    );
+    const animationData = useRef({
+      start: {
+        position,
+        time: lastTime,
+      },
+      difference: {
+        position: velocity,
+        time: duration,
+      },
+      space,
+      easing: easingFunction,
+      tag: null,
+    });
+
+    animationData.current.space = space;
+
+    const animationId = useRef(null);
+
+    const updatePosition = useCallback(() => {
+      const now = performance.now();
+      const elapsed = now - lastTime.current;
+      const t =
+        duration.current <= 0 ? 1 : Math.min(1, elapsed / duration.current);
+      const interpolatedValue = easingFunction.current(t);
+      position.current = space.current.normalize(
+        position.current + interpolatedValue * velocity.current,
+        animationData.current.tag
+      );
+      lastTime.current = now;
+      return t < 1;
+    }, []);
+
+    const callbackRef = useRef(callback);
+    callbackRef.current = callback;
+
+    const animationFrameCallback = useCallback(() => {
+      const shouldContinue = updatePosition();
+      callbackRef.current(position.current, animationData.current);
+      if (shouldContinue) {
+        animationId.current = requestAnimationFrame(animationFrameCallback);
+      } else {
+        animationId.current = null;
+      }
+    }, [updatePosition]);
+
+    const startAnimation = useCallback(
+      (destination, tag, options = {}) => {
+        const {
+          duration: newDuration = options.duration,
+          easing: newEasing = options.easing,
+        } = options;
+
+        velocity.current = space.current.diff(position.current, destination);
+
+        position.current = destination;
+
+        const currentTime = performance.now() - 1000 / 60;
+        lastTime.current = Math.max(currentTime, lastTime.current);
+
+        duration.current = newDuration || options.duration;
+        easingFunction.current =
+          newEasing || options.easing || linearInterpolation;
+        animationData.current.tag = tag;
+
+        if (options.immediate) {
+          duration.current = 0;
+        }
+
+        if (animationId.current === null) {
+          animationId.current = requestAnimationFrame(animationFrameCallback);
+        }
+      },
+      [animationFrameCallback]
+    );
+
+    useEffect(() => {
+      return () => {
+        if (animationId.current !== null) {
+          cancelAnimationFrame(animationId.current);
+          animationId.current = null;
+        }
+      };
+    }, []);
+
+    return startAnimation;
+  }
 }

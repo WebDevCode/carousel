@@ -173,14 +173,28 @@ const self = [].push([
       }
       // g = n(31861), modulefunction
 
-      function createModuloFunction(e) {
-        // This function returns a function that takes a number `n` as an argument
-        return function (n) {
-          // Calculate the remainder of `n` divided by `e`
-          // This ensures that the result is always between 0 and `e-1`
-          return ((n % e) + e) % e;
+      /**
+       * Returns a function that calculates the modulo of a given number with respect to a given divisor,
+       * and ensures that the result is always a positive value between 0 and (divisor - 1).
+       *
+       * @param {number} divisor - The divisor to perform the modulo operation with.
+       *
+       * @returns {Function} - The function that performs the modulo operation.
+       */
+      function createPositiveModuloFunction(divisor) {
+        /**
+         * Calculates the modulo of the given number with respect to the divisor,
+         * and ensures that the result is always a positive value between 0 and (divisor - 1).
+         *
+         * @param {number} number - The number to perform the modulo operation with.
+         *
+         * @returns {number} - The result of the modulo operation.
+         */
+        return function calculatePositiveModulo(number) {
+          return ((number % divisor) + divisor) % divisor;
         };
       }
+
       var v = n(77303);
       //y = n(77514), debounce and throttle
       //replace with throttle-debounce npm package.
@@ -641,7 +655,7 @@ const self = [].push([
         var animate = useTweenAnimation(); //K
         var calculateSpace = React.useMemo(
             function () {
-              return createModuloFunction(itemsFilledLength - 3);
+              return createPositiveModuloFunction(itemsFilledLength - 3);
             },
             [itemsFilledLength]
           ),
